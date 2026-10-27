@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   merge-tar:
@@ -32,3 +32,19 @@ jobs:
           path: gongkao-naoku.tar
           retention-days: 30
           if-no-files-found: error
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: gongkao-naoku.tar (latest)
+          body: |
+            自动合并产物（CI 生成）。
+
+            - 文件：`gongkao-naoku.tar`（约 190MB，可直接 `docker load -i`）
+            - MD5：`b338cba0396ee97235992e46b2819ae9`
+            - 生成源：`merge-tar` workflow · ${{ github.sha }}
+          files: gongkao-naoku.tar
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
