@@ -1,0 +1,2 @@
+# 完整镜像 tar 不入库，仓库只走分卷 part-*
+gongkao-naoku.tar
