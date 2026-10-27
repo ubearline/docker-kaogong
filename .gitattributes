@@ -1,0 +1,9 @@
+# 脚本与配置文件强制 LF（防止 Windows autocrlf 转 CRLF 导致 Linux 上执行出错）
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# 镜像分卷是二进制，禁止任何换行转换
+gongkao-naoku.tar.part-* binary

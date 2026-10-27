@@ -1,0 +1,34 @@
+name: merge-tar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  merge-tar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Merge split parts into full tar
+        run: cat gongkao-naoku.tar.part-* > gongkao-naoku.tar
+
+      - name: Verify MD5
+        run: |
+          echo "b338cba0396ee97235992e46b2819ae9  gongkao-naoku.tar" | md5sum -c -
+
+      - name: Show result
+        run: ls -lh gongkao-naoku.tar && md5sum gongkao-naoku.tar
+
+      - name: Upload merged tar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gongkao-naoku.tar
+          path: gongkao-naoku.tar
+          retention-days: 30
+          if-no-files-found: error
