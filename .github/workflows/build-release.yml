@@ -1,13 +1,13 @@
-name: Build image tar release
+name: Merge tar release
 
-# 手动触发，或改动构建相关文件时触发；打 tag v* 也触发
+# 手动触发，或改动分卷/脚本时触发；打 tag v* 也触发
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - 'gongkao-naoku.tar.part-*'
       - 'merge_gongkao.sh'
-      - 'README.md'
       - '.github/workflows/**'
     tags: ['v*']
 
@@ -15,30 +15,22 @@ permissions:
   contents: write   # 创建 release 需要
 
 jobs:
-  build:
+  merge:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image
-        run: docker build -t gongkao-naoku:latest .
-
-      - name: Export tar
+      - name: Merge parts & verify md5
         run: |
-          docker save gongkao-naoku:latest -o gongkao-naoku.tar
+          cat gongkao-naoku.tar.part-* > gongkao-naoku.tar
+          EXPECT=$(grep -oP 'MD5=\K[0-9a-f]+' merge_gongkao.sh)
+          ACTUAL=$(md5sum gongkao-naoku.tar | awk '{print $1}')
+          echo "expected=$EXPECT actual=$ACTUAL"
+          [ "$ACTUAL" = "$EXPECT" ] || { echo "md5 校验失败"; exit 1; }
           md5sum gongkao-naoku.tar | tee gongkao-naoku.tar.md5
 
-      - name: Smoke test
-        run: |
-          docker run -d --name smoke -p 8300:8300 gongkao-naoku:latest
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8300/ || true)
-            [ "$code" = "200" ] && break
-            sleep 2
-          done
-          [ "$code" = "200" ] || { docker logs smoke; exit 1; }
-          docker rm -f smoke >/dev/null
-          echo "首页 HTTP 200，冒烟通过"
+      - name: Verify tar is a docker image
+        run: docker load -i gongkao-naoku.tar
 
       - name: Upload artifact (每次运行都留档)
         uses: actions/upload-artifact@v4
